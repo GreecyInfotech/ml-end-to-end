@@ -1,0 +1,45 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: vessel-delay-api
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+    spec:
+      serviceAccountName: <runtime-service-account>
+      containers:
+        - image: <region>-docker.pkg.dev/<project>/<repository>/vessel-delay-mlops:<image-tag>
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MLFLOW_ENABLED
+              value: "true"
+            - name: MLFLOW_TRACKING_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-tracking-uri
+                  key: latest
+            - name: MLFLOW_REGISTRY_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-registry-uri
+                  key: latest
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-bootstrap-servers
+                  key: latest
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30

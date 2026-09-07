@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-09-07T07:32:16.770652+00:00",
+  "status": "PASS",
+  "reference_path": "C:\\Users\\LENOVO\\Desktop\\yt\\vessel-delay-mlops-production-ready-v2-mlflow-registry\\data\\raw\\vessels.csv",
+  "current_path": "C:\\Users\\LENOVO\\Desktop\\yt\\vessel-delay-mlops-production-ready-v2-mlflow-registry\\data\\raw\\vessels.csv",
+  "data_quality": {
+    "rows": 5000,
+    "columns": 10,
+    "schema_missing": [],
+    "missing_by_column": {
+      "vessel_id": 0,
+      "event_timestamp": 0,
+      "arrival_hour": 0,
+      "cargo_volume": 0,
+      "berth_wait_minutes": 0,
+      "port_congestion": 0,
+      "weather": 0,
+      "previous_delay_hours": 0,
+      "crane_available": 0,
+      "delayed": 0
+    },
+    "duplicate_vessels": 0,
+    "delay_rate": 0.3436,
+    "invalid_numeric": {
+      "arrival_hour": 0,
+      "cargo_volume": 0,
+      "berth_wait_minutes": 0,
+      "previous_delay_hours": 0,
+      "crane_available": 0
+    },
+    "invalid_target": 0,
+    "out_of_range": {
+      "arrival_hour": 0,
+      "cargo_volume": 0,
+      "berth_wait_minutes": 0,
+      "previous_delay_hours": 0,
+      "crane_available": 0
+    },
+    "status": "PASS"
+  },
+  "drift": [
+    {
+      "feature": "arrival_hour",
+      "type": "numeric",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    },
+    {
+      "feature": "cargo_volume",
+      "type": "numeric",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    },
+    {
+      "feature": "berth_wait_minutes",
+      "type": "numeric",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    },
+    {
+      "feature": "previous_delay_hours",
+      "type": "numeric",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    },
+    {
+      "feature": "crane_available",
+      "type": "numeric",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    },
+    {
+      "feature": "port_congestion",
+      "type": "categorical",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    },
+    {
+      "feature": "weather",
+      "type": "categorical",
+      "psi": 0.0,
+      "severity": "LOW",
+      "reference_rows": 5000,
+      "current_rows": 5000,
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_delta": 0.0
+    }
+  ],
+  "summary": {
+    "high_drift_features": [],
+    "medium_drift_features": [],
+    "unavailable_features": []
+  }
+}

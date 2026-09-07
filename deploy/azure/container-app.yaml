@@ -1,0 +1,36 @@
+# Azure Container Apps template for the FastAPI API.
+# Supply a managed identity, Key Vault-backed secrets, and a private MLflow endpoint.
+name: vessel-delay-api
+location: <azure-region>
+resourceGroup: <resource-group>
+containerAppEnvironment: <container-app-environment>
+registry:
+  server: <acr-name>.azurecr.io
+  image: vessel-delay-mlops:<image-tag>
+  identity: <managed-identity-resource-id>
+scale:
+  minReplicas: 1
+  maxReplicas: 10
+  rules:
+    - name: http-concurrency
+      http:
+        metadata:
+          concurrentRequests: "50"
+ingress:
+  external: true
+  targetPort: 8000
+  transport: http
+probes:
+  readiness:
+    path: /ready
+    port: 8000
+    type: HTTP
+  liveness:
+    path: /health
+    port: 8000
+    type: HTTP
+environment:
+  MLFLOW_ENABLED: "true"
+  MLFLOW_TRACKING_URI: <key-vault-backed-tracking-uri>
+  MLFLOW_REGISTRY_URI: <key-vault-backed-registry-uri>
+  KAFKA_BOOTSTRAP_SERVERS: <event-hubs-kafka-endpoint>

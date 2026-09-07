@@ -1,0 +1,70 @@
+services:
+  api:
+    build: .
+    image: ${VESSEL_DELAY_IMAGE:-vessel-delay-mlops:local}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - mlruns:/app/mlruns
+      - model-data:/app/models
+      - prediction-data:/app/data/predictions
+    environment:
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-sqlite:///mlruns/mlflow.db}
+      MLFLOW_REGISTRY_URI: ${MLFLOW_REGISTRY_URI:-sqlite:///mlruns/mlflow.db}
+      MLFLOW_ENABLED: ${MLFLOW_ENABLED:-true}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  train:
+    image: ${VESSEL_DELAY_IMAGE:-vessel-delay-mlops:local}
+    profiles: ["jobs"]
+    volumes:
+      - mlruns:/app/mlruns
+      - model-data:/app/models
+    environment:
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-sqlite:///mlruns/mlflow.db}
+      MLFLOW_REGISTRY_URI: ${MLFLOW_REGISTRY_URI:-sqlite:///mlruns/mlflow.db}
+      MLFLOW_ENABLED: ${MLFLOW_ENABLED:-true}
+    command: ["python", "-m", "src.train"]
+    restart: "no"
+
+  monitor:
+    image: ${VESSEL_DELAY_IMAGE:-vessel-delay-mlops:local}
+    profiles: ["jobs"]
+    volumes:
+      - prediction-data:/app/data/predictions
+    command: ["python", "-m", "monitoring.monitor"]
+    restart: "no"
+
+  mlflow:
+    image: ${MLFLOW_IMAGE:-ghcr.io/mlflow/mlflow:v3.0.0}
+    profiles: ["registry"]
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlruns:/app/mlruns
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - sqlite:///app/mlruns/mlflow.db
+      - --default-artifact-root
+      - /app/mlruns/artifacts
+    restart: unless-stopped
+
+volumes:
+  mlruns:
+    name: ${VESSEL_DELAY_MLRUNS_VOLUME:-vessel-delay-mlruns}
+  model-data:
+    name: ${VESSEL_DELAY_MODEL_VOLUME:-vessel-delay-models}
+  prediction-data:
+    name: ${VESSEL_DELAY_PREDICTION_VOLUME:-vessel-delay-predictions}

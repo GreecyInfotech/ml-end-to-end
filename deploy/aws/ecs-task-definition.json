@@ -1,0 +1,30 @@
+{
+  "family": "vessel-delay-api",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "<ecs-execution-role-arn>",
+  "taskRoleArn": "<ecs-task-role-arn>",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "<account>.dkr.ecr.<region>.amazonaws.com/vessel-delay-mlops:<image-tag>",
+      "essential": true,
+      "portMappings": [{"containerPort": 8000, "protocol": "tcp"}],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)\""],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "secrets": [
+        {"name": "MLFLOW_TRACKING_URI", "valueFrom": "<secrets-manager-arn>:MLFLOW_TRACKING_URI::"},
+        {"name": "MLFLOW_REGISTRY_URI", "valueFrom": "<secrets-manager-arn>:MLFLOW_REGISTRY_URI::"},
+        {"name": "KAFKA_BOOTSTRAP_SERVERS", "valueFrom": "<secrets-manager-arn>:KAFKA_BOOTSTRAP_SERVERS::"}
+      ],
+      "environment": [{"name": "MLFLOW_ENABLED", "value": "true"}]
+    }
+  ]
+}

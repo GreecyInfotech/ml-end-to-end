@@ -1,0 +1,1 @@
+"""Optional Kafka streaming integration for vessel-delay predictions."""

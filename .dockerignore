@@ -1,0 +1,16 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+mlruns
+models/*.joblib
+models/metadata.json
+models/production_metadata.json
+data/predictions/*.json
+notebooks
+tests
+README.md
+usermanual.md
+end_to_end_flow.md
