@@ -22,6 +22,8 @@ A production-oriented classical ML system for predicting whether a vessel will b
 - FastAPI `/health`, `/ready`, `/metrics`, `/predict`
 - Request IDs and basic reliability/latency metrics
 - Prometheus metrics, Grafana SRE dashboard, JSON structured logs, optional OTLP traces, SLO/error-budget endpoint, and incident-response runbook
+- ML Gateway authentication, role authorization, validation, rate limiting, routing, timeouts, retries, fallback, and request tracing
+- Evidence-based retraining triggers for drift, performance degradation, new data, schedules, business changes, feature changes, and label changes
 - Larger 5,000-row synthetic dataset for realistic local testing
 
 ## Project documentation
@@ -39,6 +41,8 @@ A production-oriented classical ML system for predicting whether a vessel will b
 - [ML gateway architecture](ml_gateway_architecture.md): API orchestration, authentication, rate limiting, routing, and cloud edge mapping.
 - [User manual](usermanual.md): setup, training, API, monitoring, MLflow, Docker, and troubleshooting.
 - [End-to-end flow](end_to_end_flow.md): training, promotion, serving, monitoring, and deployment flow.
+- [Complete end-to-end execution flow](src/end_to_end_execution_flow.md): executable local and production steps from environment setup through release, monitoring, retraining, and rollback.
+- [YouTube course series](youtube/README.md): 10 source-anchored episodes with business framing, architecture walkthroughs, live demos, and production takeaways.
 
 ## Architecture
 
