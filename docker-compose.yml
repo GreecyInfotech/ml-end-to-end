@@ -1,4 +1,31 @@
 services:
+  gateway:
+    build: .
+    image: ${VESSEL_DELAY_IMAGE:-vessel-delay-mlops:local}
+    ports:
+      - "8080:8080"
+    environment:
+      MODEL_API_URL: http://api:8000
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
+      GATEWAY_API_KEYS: ${GATEWAY_API_KEYS:-}
+      GATEWAY_REQUIRED_ROLE: ${GATEWAY_REQUIRED_ROLE:-predictor}
+      GATEWAY_TIMEOUT_SECONDS: ${GATEWAY_TIMEOUT_SECONDS:-5}
+      GATEWAY_BACKEND_MAX_RETRIES: ${GATEWAY_BACKEND_MAX_RETRIES:-2}
+      GATEWAY_RETRY_BACKOFF_SECONDS: ${GATEWAY_RETRY_BACKOFF_SECONDS:-0.1}
+      GATEWAY_RATE_LIMIT: ${GATEWAY_RATE_LIMIT:-120}
+      SLO_AVAILABILITY_TARGET: ${SLO_AVAILABILITY_TARGET:-0.995}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    command: ["uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "8080"]
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   api:
     build: .
     image: ${VESSEL_DELAY_IMAGE:-vessel-delay-mlops:local}
@@ -13,6 +40,8 @@ services:
       MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-sqlite:///mlruns/mlflow.db}
       MLFLOW_REGISTRY_URI: ${MLFLOW_REGISTRY_URI:-sqlite:///mlruns/mlflow.db}
       MLFLOW_ENABLED: ${MLFLOW_ENABLED:-true}
+      SLO_AVAILABILITY_TARGET: ${SLO_AVAILABILITY_TARGET:-0.995}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)"]
       interval: 30s
@@ -61,6 +90,40 @@ services:
       - /app/mlruns/artifacts
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    depends_on:
+      gateway:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: ${GF_AUTH_ANONYMOUS_ENABLED:-false}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-change-me}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   mlruns:
     name: ${VESSEL_DELAY_MLRUNS_VOLUME:-vessel-delay-mlruns}
@@ -68,3 +131,7 @@ volumes:
     name: ${VESSEL_DELAY_MODEL_VOLUME:-vessel-delay-models}
   prediction-data:
     name: ${VESSEL_DELAY_PREDICTION_VOLUME:-vessel-delay-predictions}
+  prometheus-data:
+    name: ${VESSEL_DELAY_PROMETHEUS_VOLUME:-vessel-delay-prometheus}
+  grafana-data:
+    name: ${VESSEL_DELAY_GRAFANA_VOLUME:-vessel-delay-grafana}

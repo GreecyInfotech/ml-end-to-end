@@ -224,7 +224,7 @@ A model release should be approved only when all of the following are true:
 
 ## 14. Retraining Strategy
 
-Retraining should be scheduled by a combination of time and evidence, not by drift alone.
+Retraining is scheduled by a combination of time and evidence, not by drift alone. The controlled entry point is `python -m src.retrain`; use `--dry-run` to review the decision before executing training.
 
 Trigger investigation when one or more conditions occur:
 
@@ -234,6 +234,8 @@ Trigger investigation when one or more conditions occur:
 - Recall, business cost, calibration, or latency degrades.
 - Port operations, weather patterns, berth policy, or source systems change.
 - A new label definition or prediction horizon is introduced.
+
+The implemented trigger matrix covers data drift, model performance degradation, business requirement changes, new data, scheduled retraining, feature changes, and label changes. Every decision records the trigger evidence, dataset fingerprint, feature contract, label version, and business requirements version in `models/retraining_audit.json`.
 
 Before retraining:
 

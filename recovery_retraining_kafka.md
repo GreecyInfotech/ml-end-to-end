@@ -38,15 +38,39 @@ Retraining is intentionally a separate command from monitoring:
 
 ```powershell
 python -m monitoring.monitor --fail-on-alert
-python -m src.retrain --reason "Scheduled weekly retraining"
+python -m src.retrain --trigger scheduled --reason "Scheduled weekly retraining"
 ```
 
-The retraining command:
+The retraining command evaluates these triggers:
+
+| Trigger | Detection and response |
+|---|---|
+| Data drift | Monitoring `WARN`/`ALERT`, PSI, missingness, or unavailable features. Validate ingestion before retraining. |
+| Model performance degradation | Compare `data/predictions/performance_report.json` current vs baseline recall, business cost, and P95 latency. |
+| Business requirement change | Pass `--trigger business_requirement_change` and increment `business.requirements_version`. |
+| New data | Detect a changed dataset fingerprint plus the configured minimum new rows. |
+| Scheduled retraining | Pass `--trigger scheduled` from cron, a workflow, or a cloud scheduler. |
+| Feature change | Pass `--trigger feature_change` or change `project.feature_version`/the feature contract hash. |
+| Label change | Pass `--trigger label_change` or increment `model.label_version`. |
+
+Preview the decision without training:
+
+```powershell
+python -m src.retrain `
+  --trigger scheduled `
+  --reason "Weekly candidate refresh" `
+  --dry-run
+```
+
+The command then:
 
 - Reads `data/predictions/monitoring_report.json`.
 - Blocks when status is `ALERT` unless `--allow-alert` is explicit.
+- Records the detected trigger, evidence, dataset row count, SHA-256 fingerprint, feature contract, label version, and business requirements version.
 - Runs the full candidate training and promotion gate.
-- Writes `models/retraining_audit.json` with reason, monitoring status, override, timestamp, and exit code.
+- Writes `models/retraining_audit.json` with reason, monitoring status, trigger decision, override, timestamp, and exit code.
+
+The default thresholds are configured in `configs/config.yaml` under `retraining`: 100 new rows, 5% recall drop, 10% business-cost increase, and 20% P95 latency increase. These are starting policies and should be calibrated against matured labels and the service SLO.
 
 For an approved exception:
 

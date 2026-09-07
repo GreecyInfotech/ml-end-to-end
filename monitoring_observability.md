@@ -7,7 +7,9 @@ The system exposes three operational signal groups:
 | Signal | Source | Purpose |
 |---|---|---|
 | Service health | FastAPI `/health` and `/ready` | Process and model availability |
-| Runtime telemetry | FastAPI `/metrics` | Requests, errors, latency, uptime, and model identity |
+| Runtime telemetry | FastAPI `/metrics` and `/metrics.json` | Prometheus metrics plus JSON diagnostics |
+| SRE health | FastAPI `/sre` | Availability SLO, error budget, and burn rate |
+| Distributed traces | OpenTelemetry OTLP | Trace/request correlation across gateway and API |
 | Data/model health | `monitoring.monitor` | Data quality, PSI drift, and actionable alert status |
 
 ## 2. API Observability
@@ -20,7 +22,7 @@ Returns process health, whether a model is loaded, the model source, and registr
 
 Returns HTTP 200 only when a model is available. Returns HTTP 503 when neither the MLflow champion nor local fallback can be loaded. Use this endpoint for readiness probes.
 
-### `/metrics`
+### `/metrics.json`
 
 Returns:
 
@@ -33,6 +35,32 @@ Returns:
 - Resolved MLflow model version
 
 The current counters are process-local. Production deployments should export these values to a metrics backend and preserve request ID correlation through the gateway or log pipeline.
+
+### Prometheus and Grafana
+
+`/metrics` is a Prometheus scrape endpoint. It exports request counters, 5xx counters, request duration histograms, process CPU utilization, resident memory, throughput, availability, SLO targets, error-budget remaining ratio, and SLO burn rate. Histogram queries provide P50/P95/P99 latency in Grafana:
+
+```promql
+histogram_quantile(0.95, sum by (service, le) (rate(vessel_http_request_duration_seconds_bucket[5m])))
+```
+
+Start the local observability stack with:
+
+```powershell
+docker compose --profile observability up -d
+```
+
+Prometheus is available at `http://127.0.0.1:9090`; Grafana is available at `http://127.0.0.1:3000`. The provisioned dashboard includes CPU, memory, throughput, errors, availability, request rate, P50/P95/P99, error budget, and burn rate. Set `GF_SECURITY_ADMIN_PASSWORD` before a shared deployment.
+
+### SLO and error budget
+
+The default availability SLO is 99.5% over the configured `SLO_WINDOW` (default `30d`). Change it with `SLO_AVAILABILITY_TARGET`. `/sre` gives the current process-window availability, 5xx error rate, remaining budget, burn rate, and breach status. For durable multi-instance SLOs, aggregate the Prometheus counters centrally and evaluate a recording rule over a 30-day window.
+
+### Logs and traces
+
+Each request emits one JSON log record with method, route, status, duration, `request_id`, and `trace_id`. Incoming `X-Request-ID` is preserved and forwarded by the gateway. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable OTLP HTTP trace export; without it, tracing stays local/no-op and the service remains usable without a collector.
+
+Gateway retries and controlled backend fallbacks are exposed as gateway counters in `/metrics.json` and in the Prometheus HTTP request/error series. Alert on sustained backend errors or fallback responses, not on a single transient retry.
 
 Every response receives an `X-Request-ID` header. Callers may provide one; otherwise the service generates one.
 
@@ -107,13 +135,13 @@ Recommended dashboard panels:
 
 When an alert fires:
 
-1. Check `/health`, `/ready`, and `/metrics`.
-2. Capture the current request ID and model version.
-3. Inspect the latest monitoring report.
+1. Check `/health`, `/ready`, `/metrics`, and `/sre` for the affected service.
+2. Capture the `X-Request-ID`, `trace_id`, deployment revision, and model version.
+3. Inspect the Grafana error-budget and latency panels, then query structured logs by request ID.
 4. Determine whether the issue is service, registry, data quality, drift, or model performance.
-5. Do not retrain automatically from a drift alert alone.
-6. Roll back the MLflow `champion` alias when model behavior is unsafe and an approved prior version exists.
-7. Preserve the report, logs, model version, and decision rationale.
+5. Declare an incident when the SLO is breached or the burn-rate alert is sustained; assign an incident lead and record the timeline.
+6. Mitigate first: reduce traffic, disable a bad route, or roll back the MLflow `champion` alias when an approved prior version exists.
+7. Do not retrain automatically from a drift alert alone. Preserve reports, logs, traces, model version, and decision rationale for the post-incident review.
 
 ## 7. Production Integration
 

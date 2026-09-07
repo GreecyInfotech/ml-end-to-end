@@ -21,6 +21,7 @@ A production-oriented classical ML system for predicting whether a vessel will b
 - Optional MLflow Model Registry registration through `MLFLOW_REGISTRY_URI`
 - FastAPI `/health`, `/ready`, `/metrics`, `/predict`
 - Request IDs and basic reliability/latency metrics
+- Prometheus metrics, Grafana SRE dashboard, JSON structured logs, optional OTLP traces, SLO/error-budget endpoint, and incident-response runbook
 - Larger 5,000-row synthetic dataset for realistic local testing
 
 ## Project documentation
@@ -35,6 +36,7 @@ A production-oriented classical ML system for predicting whether a vessel will b
 - [Feature-store consistency](feature_store_consistency.md): feature contracts, offline/online parity, readiness checks, and SRE release gates.
 - [Cloud migration guide](cloud_migration.md): local MLOps mappings and deployment sequence for Azure, AWS, and GCP.
 - [Enterprise MLOps capstone](enterprise_mlops_capstone.md): architecture, governance, SRE, cloud portability, interview answers, and final validation evidence.
+- [ML gateway architecture](ml_gateway_architecture.md): API orchestration, authentication, rate limiting, routing, and cloud edge mapping.
 - [User manual](usermanual.md): setup, training, API, monitoring, MLflow, Docker, and troubleshooting.
 - [End-to-end flow](end_to_end_flow.md): training, promotion, serving, monitoring, and deployment flow.
 

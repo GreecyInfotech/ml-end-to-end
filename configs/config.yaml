@@ -9,6 +9,7 @@ data:
 
 model:
   target: delayed
+  label_version: "v1"
   test_size: 0.20
   random_state: 42
   cv_folds: 5
@@ -17,6 +18,14 @@ model:
 business:
   false_positive_cost: 1.0
   false_negative_cost: 5.0
+  requirements_version: "v1"
+
+retraining:
+  schedule: "weekly"
+  min_new_rows: 100
+  min_recall_drop: 0.05
+  max_business_cost_increase: 0.10
+  max_latency_increase_ratio: 0.20
 
 promotion_gate:
   min_recall: 0.85

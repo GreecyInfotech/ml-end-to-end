@@ -18,14 +18,15 @@ from src.config import load_config
 from src.feature_engineering import create_features
 from src.feature_store import feature_contract_hash
 from src.mlflow_registry import get_alias_model, registry_enabled
+from observability.telemetry import install_observability, sre_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_PATH = ROOT / "models" / "champion.joblib"
 PROCESS_STARTED_AT = time.time()
 CONFIG = load_config()
 logger = logging.getLogger("vessel-delay-api")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 app = FastAPI(title="Vessel Delay Prediction API", version="2.1.0")
+install_observability(app, "vessel-delay-api")
 
 model = None
 model_source = "local"
@@ -166,7 +167,7 @@ def ready():
     return {"ready": True, "model_source": model_source, "registry": registry_metadata, "feature_version": feature_version, "feature_contract_hash": runtime_feature_contract_hash, "feature_contract_status": feature_contract_status()}
 
 
-@app.get("/metrics", response_model=MetricsResponse)
+@app.get("/metrics.json", response_model=MetricsResponse)
 def metrics():
     with stats_lock:
         latencies = list(stats["latencies_ms"])
@@ -184,6 +185,11 @@ def metrics():
         "model_source": model_source,
         "model_version": registry_metadata.get("version"),
     }
+
+
+@app.get("/sre")
+def sre():
+    return sre_snapshot("vessel-delay-api")
 
 
 @app.post("/predict", response_model=PredictionResponse)
